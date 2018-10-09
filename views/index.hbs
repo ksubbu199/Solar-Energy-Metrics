@@ -1,0 +1,238 @@
+<html>
+  <head>
+  <style>
+    html,
+body,
+#map-canvas {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+#pac-input{
+  left:2% !important;
+  top:7% !important;
+  width:20% !important;
+}
+
+    </style>
+    </head>
+<body>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places&key=AIzaSyCnf8w_JVAb76YrCmjxMYGhfS-n_Zx_5F0"></script>
+<input id="pac-input" class="form-control controls" type="text" placeholder="Search Box">
+<div class="container-fluid" id="map-canvas" style="height:100%;"></div>
+</body>
+<script>
+
+  function getCordinatesX(cord, dist) {
+      var meters = dist;
+      var coef = meters * 0.0000089;
+      var new_lat = cord.lat + coef;
+      var new_long = cord.lang + coef / Math.cos(cord.lat * 0.018);
+      var newCord = {
+        lat: new_lat,
+        lang: new_long
+      };
+      return newCord;
+    }
+
+   
+
+   function init() {
+const markerClick = function () {
+              //{{!-- map.setZoom(9); --}}
+              var lat = marker.getPosition().lat();
+              var lang = marker.getPosition().lng();
+              var myusername = $("#username").val();
+              	//var lat = parseFloat(req.query.lat);
+              //var lang = parseFloat(req.query.long);
+              var dist = 500;
+              var cord = {
+                lat: lat,
+                lang: lang
+              };
+              console.log(cord);
+              var newCord = getCordinatesX(cord, dist);
+              console.log(newCord);
+              var extent = {
+                xmin: Math.floor(lang),
+                ymin: Math.floor(lat),
+                xmax: Math.floor(newCord.lang),
+                ymax: Math.floor(newCord.lat),
+                spatialReference: {wkid: 4326, latestWkid: 4326}
+              };
+
+             
+
+              // var output = {
+              // 	extent: extent
+              // };
+              var stringExtent = JSON.stringify(extent);
+              console.log(stringExtent);
+              var ur =
+                "http://atlasserver.niwe.res.in/arcgis/rest/services/Solar_radiation/Solar_Radiation_Map_of_India/MapServer/5/query?f=json&returnGeometry=true&spatialRel=esriSpatialRelIntersects&maxAllowableOffset=38&geometry=" +
+                stringExtent +
+                "&geometryType=esriGeometryEnvelope&inSR=102100&outFields=*&outSR=102100";
+
+              $.ajax({
+                type: "GET",
+                url: "http://atlasserver.niwe.res.in/arcgis/rest/services/Solar_radiation/Solar_Radiation_Map_of_India/MapServer/5/query",
+                data: {
+                  f:"json",
+                  returnGeometry:true,
+                  spatialRel:"esriSpatialRelIntersects",
+                  maxAllowableOffset:38,
+                  geometry:stringExtent,
+                  geometryType:"esriGeometryEnvelope",
+                  inSR:102100,
+                  outFields:"*",
+                  outSR:102100},
+                  //lat:lat, long:lng,area:500,
+                cache: false,
+                success: function (data) {
+                  console.log(data);
+                  body=data;
+                  var output = {};
+                  if (body.features[0]) {
+                    output.error = false;
+                    output.CUF = {
+                      value: body.features[0].attributes.CUF,
+                      units: body.fieldAliases.CUF
+                    };
+                    output.AEP = {
+                      value: body.features[0].attributes.AEP_per_MW,
+                      units: body.fieldAliases.AEP_per_MW
+                    };
+                    output.DNI = {
+                      value: body.features[0].attributes.DNI,
+                      units: body.fieldAliases.DNI
+                    };
+                    output.GHI = {
+                      value: body.features[0].attributes.GHI,
+                      units: body.fieldAliases.GHI
+                    };
+                    output.DHI = {
+                      value: body.features[0].attributes.DHI,
+                      units: body.fieldAliases.DHI
+                    };
+                  } else {
+                    output.error = true;
+                  }
+                  console.log(output)
+                  addInfoWindow(marker, output, output.error);
+
+                },
+                error:function(err){
+                  alert(JSON.stringify(err))
+                  console.log(err)
+                }
+              });
+}
+ var infoWindow;
+
+    function addInfoWindow(marker, data, error = false) {
+       var message = !error ? "<h4 class='page-header' style='margin:1% 0%;'>Solar Energy Parameters</h4><p><b>DNI</b  > : " + data.DNI.value + " " + (data.DNI.units).substring(4) + " </p>" +
+         "<p><b>CUF</b> : " + data.CUF.value + " " + (data.CUF.units).substring(4) + " </p>" +
+         "<p><b>DHI</b> : " + data.DHI.value + " " + (data.DHI.units).substring(4) + " </p>" +
+         "<p><b>AEP</b> : " + data.AEP.value + " " + (data.AEP.units).substring(4) + " </p>" +
+         "<p><b>GHI</b> : " + data.GHI.value + " " + (data.GHI.units).substring(4) + " </p>" : "<div class='alert alert-danger' style='margin:0;'> <b> Oops </b> No data available here.</div >"
+       if (infoWindow) infoWindow.close();
+       infoWindow = new google.maps.InfoWindow({
+
+         content: message
+       });
+       infoWindow.open(map, marker);
+       //google.maps.event.addListener(marker, 'click', function () {
+
+       // });//
+     }
+
+      var map = new google.maps.Map(document.getElementById('map-canvas'), {
+        center: {
+          lat: 12.9715987,
+          lng: 77.59456269999998
+        },
+        zoom: 8,
+        mapTypeId: google.maps.MapTypeId.SATELLITE
+      });
+     var marker = new google.maps.Marker({
+       position: new google.maps.LatLng(17.4401, 78.3489),
+       map: map,
+       visible: false
+     });
+
+      map.addListener('click', function (event) {
+       // 3 seconds after the center of the map has changed, pan back to the
+       // marker.
+
+
+       var latlng = new google.maps.LatLng(event.latLng.lat(), event.latLng.lng());
+       marker.setPosition(latlng);
+       marker.setVisible(true);
+       google.maps.event.trigger(marker, 'click')
+     });
+
+      var searchBox = new google.maps.places.SearchBox(document.getElementById('pac-input'));
+  marker.bindTo('map', searchBox, 'map');
+  google.maps.event.addListener(marker, 'click', markerClick);
+  marker.setMap(map);
+  map.setCenter(marker.getPosition());
+      map.controls[google.maps.ControlPosition.TOP_CENTER].push(document.getElementById('pac-input'));
+      google.maps.event.addListener(searchBox, 'places_changed', function () {
+        searchBox.set('map', null);
+
+
+        var places = searchBox.getPlaces();
+
+        var bounds = new google.maps.LatLngBounds();
+        var i, place;
+        for (i = 0; place = places[i]; i++) {
+          (function (place) {
+            marker.setPosition(place.geometry.location);
+            
+            // = new google.maps.Marker({
+
+              //position: place.geometry.location
+           // });
+            marker.bindTo('map', searchBox, 'map');
+            google.maps.event.addListener(marker, 'map_changed', function () {
+              if (!this.getMap()) {
+                this.unbindAll();
+              }
+            });
+            bounds.extend(place.geometry.location);
+
+             map.addListener('click', function (event) {
+              // 3 seconds after the center of the map has changed, pan back to the
+              // marker.
+                
+
+              var latlng = new google.maps.LatLng(event.latLng.lat(), event.latLng.lng());
+               marker.setPosition(latlng);
+               google.maps.event.trigger(marker, 'click')
+            });
+
+              // Zoom to 9 when clicking on marker
+            google.maps.event.addListener(marker, 'click', markerClick);
+              //map.setCenter(marker.getPosition());
+
+            //});
+            google.maps.event.trigger(marker, 'click')
+
+          }(place));
+
+        }
+        map.fitBounds(bounds);
+        searchBox.set('map', map);
+        map.setZoom(Math.min(map.getZoom(), 12));
+
+      });
+
+     
+    }
+    google.maps.event.addDomListener(window, 'load', init);
+  </script>
+  </html>
