@@ -21,7 +21,7 @@ body,
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places&key=AIzaSyAmGKte0k1UEuQ3nOT-Kd6TAV-6kIi8ZGI"></script>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places&key=AIzaSyD6zbnksFIf1G4pa47vOJKHR8yC819U6oI"></script>
 <input id="pac-input" class="form-control controls" type="text" placeholder="Search Box">
 <div class="container-fluid" id="map-canvas" style="height:100%;"></div>
 </body>
@@ -47,9 +47,9 @@ const markerClick = function () {
               var lat = marker.getPosition().lat();
               var lang = marker.getPosition().lng();
               //var myusername = $("#username").val();
-              var winter = float(lat)*0.9 + 29;
-              var summer = float(lat)*0.9-23.5;
-              var spaf = float(lat) - 2.5;
+              var winter = Math.abs(parseInt(parseFloat(lat)*0.9 + 29));
+              var summer = Math.abs(parseInt(parseFloat(lat)*0.9-23.5));
+              var spaf = Math.abs(parseInt(parseFloat(lat) - 2.5));
               
               	//var lat = parseFloat(req.query.lat);
               //var lang = parseFloat(req.query.long);
@@ -151,7 +151,7 @@ const markerClick = function () {
          "<p><b>AEP</b> : " + data.AEP.value + " " + (data.AEP.units).substring(4) + " </p>" +
          "<p><b>Angle(Winter)</b> : " + data.angle.winter + " </p>" +
          "<p><b>Angle(Summer)</b> : " + data.angle.summer + " </p>" +
-         "<p><b>Angle(Spring and Fall)</b> : " + data.andle.spaf + " </p>" +: "<div class='alert alert-danger' style='margin:0;'> <b> Oops </b> No data available here.</div >"
+         "<p><b>Angle(Spring and Fall)</b> : " + data.angle.spaf + " </p>" : "<div class='alert alert-danger' style='margin:0;'> <b> Oops </b> No data available here.</div >"
        if (infoWindow) infoWindow.close();
        infoWindow = new google.maps.InfoWindow({
 
